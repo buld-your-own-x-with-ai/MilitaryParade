@@ -1,6 +1,51 @@
 import RealityKit
 import MultipeerConnectivity
 import SwiftUI
+import simd
+
+extension simd_quatf: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(vector.x, forKey: .x)
+        try container.encode(vector.y, forKey: .y)
+        try container.encode(vector.z, forKey: .z)
+        try container.encode(vector.w, forKey: .w)
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let x = try container.decode(Float.self, forKey: .x)
+        let y = try container.decode(Float.self, forKey: .y)
+        let z = try container.decode(Float.self, forKey: .z)
+        let w = try container.decode(Float.self, forKey: .w)
+        self.init(vector: SIMD4<Float>(x, y, z, w))
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case x, y, z, w
+    }
+}
+
+extension SIMD3: Codable where Scalar: Codable {
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
+        try container.encode(z, forKey: .z)
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let x = try container.decode(Scalar.self, forKey: .x)
+        let y = try container.decode(Scalar.self, forKey: .y)
+        let z = try container.decode(Scalar.self, forKey: .z)
+        self.init(x, y, z)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case x, y, z
+    }
+}
 
 class MultiUserARSession: NSObject, ObservableObject {
     @Published var isSessionActive = false
@@ -138,19 +183,19 @@ extension MultiUserARSession: MCSessionDelegate {
         
         switch message.type {
         case .entityUpdate:
-            if let data = message.data as? EntityUpdateData {
+            if let data = message.data.asEntityUpdateData {
                 handleEntityUpdate(data)
             }
         case .perspectiveChange:
-            if let data = message.data as? PerspectiveChangeData {
+            if let data = message.data.asPerspectiveChangeData {
                 handlePerspectiveChange(data)
             }
         case .paradeControl:
-            if let data = message.data as? ParadeControlData {
+            if let data = message.data.asParadeControlData {
                 handleParadeControl(data)
             }
         case .chatMessage:
-            if let data = message.data as? ChatMessageData {
+            if let data = message.data.asChatMessageData {
                 handleChatMessage(data)
             }
         }
@@ -191,11 +236,19 @@ extension MultiUserARSession: MCNearbyServiceBrowserDelegate {
 }
 
 struct ARMessage: Codable {
-    let id = UUID()
+    let id: UUID
     let type: MessageType
     let senderID: String
-    let data: MessageData
-    let timestamp = Date()
+    let data: AnyMessageData
+    let timestamp: Date
+    
+    init(type: MessageType, senderID: String, data: MessageData) {
+        self.id = UUID()
+        self.type = type
+        self.senderID = senderID
+        self.data = AnyMessageData(data)
+        self.timestamp = Date()
+    }
     
     enum MessageType: String, Codable {
         case entityUpdate
@@ -207,11 +260,56 @@ struct ARMessage: Codable {
 
 protocol MessageData: Codable {}
 
+struct AnyMessageData: Codable {
+    private let data: Data
+    private let typeName: String
+    
+    init<T: MessageData>(_ messageData: T) {
+        self.data = try! JSONEncoder().encode(messageData)
+        self.typeName = String(describing: T.self)
+    }
+    
+    func decode<T: MessageData>(as type: T.Type) throws -> T {
+        return try JSONDecoder().decode(type, from: data)
+    }
+    
+    var asEntityUpdateData: EntityUpdateData? {
+        return try? decode(as: EntityUpdateData.self)
+    }
+    
+    var asPerspectiveChangeData: PerspectiveChangeData? {
+        return try? decode(as: PerspectiveChangeData.self)
+    }
+    
+    var asParadeControlData: ParadeControlData? {
+        return try? decode(as: ParadeControlData.self)
+    }
+    
+    var asChatMessageData: ChatMessageData? {
+        return try? decode(as: ChatMessageData.self)
+    }
+}
+
 struct EntityUpdateData: MessageData {
     let entityID: String
     let action: EntityAction
-    let transform: Transform
+    let position: SIMD3<Float>
+    let rotation: simd_quatf
+    let scale: SIMD3<Float>
     let timestamp: Date
+    
+    init(entityID: String, action: EntityAction, transform: Transform, timestamp: Date) {
+        self.entityID = entityID
+        self.action = action
+        self.position = transform.translation
+        self.rotation = transform.rotation
+        self.scale = transform.scale
+        self.timestamp = timestamp
+    }
+    
+    var transform: Transform {
+        return Transform(scale: scale, rotation: rotation, translation: position)
+    }
 }
 
 struct PerspectiveChangeData: MessageData {
@@ -246,8 +344,6 @@ enum ParadeControlAction: String, Codable {
     case nextPhase
 }
 
-extension CameraPerspective: Codable {}
-extension Transform: Codable {}
 
 struct MultiUserControlView: View {
     @ObservedObject var multiUserSession: MultiUserARSession
@@ -421,7 +517,7 @@ struct ChatBubbleView: View {
     let message: ARMessage
     
     var body: some View {
-        if let data = message.data as? ChatMessageData {
+        if let data = message.data.asChatMessageData {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(message.senderID)

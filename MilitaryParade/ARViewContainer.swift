@@ -136,7 +136,7 @@ extension ARView {
     }
 }
 
-enum CameraPerspective: CaseIterable {
+enum CameraPerspective: CaseIterable, Codable {
     case ground
     case aerial
     case grandstand
