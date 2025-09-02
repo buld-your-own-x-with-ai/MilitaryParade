@@ -24,7 +24,7 @@ class SixthGenFighterJet {
     
     private static func createFuselage() -> Entity {
         let fuselageMesh = MeshResource.generateBox(width: 0.3, height: 0.08, depth: 1.2)
-        let fuselageMaterial = SimpleMaterial(color: .darkGray, roughness: 0.2, isMetallic: true)
+        let fuselageMaterial = SimpleMaterial(color: UIColor.darkGray, roughness: 0.2, isMetallic: true)
         let fuselage = ModelEntity(mesh: fuselageMesh, materials: [fuselageMaterial])
         fuselage.name = "Fuselage"
         return fuselage
@@ -144,7 +144,7 @@ class ModernMilitaryEquipment {
         tankEntity.name = "Type99A主战坦克"
         
         let hull = MeshResource.generateBox(width: 0.8, height: 0.3, depth: 1.2)
-        let hullMaterial = SimpleMaterial(color: .darkGreen, roughness: 0.6, isMetallic: true)
+        let hullMaterial = SimpleMaterial(color: UIColor(red: 0.0, green: 0.5, blue: 0.0, alpha: 1.0), roughness: 0.6, isMetallic: true)
         let hullModel = ModelEntity(mesh: hull, materials: [hullMaterial])
         
         let turret = MeshResource.generateCylinder(height: 0.2, radius: 0.35)
@@ -187,7 +187,7 @@ class ModernMilitaryEquipment {
         bomberEntity.name = "轰-20隐身战略轰炸机"
         
         let fuselage = MeshResource.generateBox(width: 0.4, height: 0.15, depth: 1.8)
-        let fuselageMaterial = SimpleMaterial(color: .darkGray, roughness: 0.2, isMetallic: true)
+        let fuselageMaterial = SimpleMaterial(color: UIColor.darkGray, roughness: 0.2, isMetallic: true)
         let fuselageModel = ModelEntity(mesh: fuselage, materials: [fuselageMaterial])
         
         let wings = MeshResource.generateBox(width: 2.0, height: 0.05, depth: 0.8)

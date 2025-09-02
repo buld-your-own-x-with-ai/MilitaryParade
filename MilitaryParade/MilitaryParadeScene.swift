@@ -145,7 +145,7 @@ class MilitaryParadeScene: ObservableObject {
     }
     
     private func setupMilitaryFormations() {
-        guard let anchor = paradeAnchor else { return }
+        guard paradeAnchor != nil else { return }
         
         createInfantryFormations()
         createEquipmentFormations()
@@ -200,7 +200,7 @@ class MilitaryParadeScene: ObservableObject {
         guard let anchor = paradeAnchor else { return }
         
         let equipmentData = [
-            ("主战坦克", SIMD3<Float>(-2, 0, 12), UIColor.darkGreen),
+            ("主战坦克", SIMD3<Float>(-2, 0, 12), UIColor(red: 0.0, green: 0.5, blue: 0.0, alpha: 1.0)),
             ("装甲车", SIMD3<Float>(0, 0, 12), UIColor.brown),
             ("导弹发射车", SIMD3<Float>(2, 0, 12), UIColor.gray),
             ("火炮", SIMD3<Float>(4, 0, 12), UIColor.darkGray)
@@ -238,7 +238,7 @@ class MilitaryParadeScene: ObservableObject {
     }
     
     private func createInfoPanel(for entity: Entity) -> Entity? {
-        guard let name = entity.name else { return nil }
+        guard entity.name != nil else { return nil }
         
         let panelEntity = Entity()
         

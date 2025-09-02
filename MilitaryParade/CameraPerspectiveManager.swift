@@ -414,7 +414,7 @@ class TimelineModeManager: ObservableObject {
         case "early":
             color = .brown
         case "modern":
-            color = .darkGreen
+            color = UIColor(red: 0.0, green: 0.5, blue: 0.0, alpha: 1.0)
         case "advanced":
             color = .gray
         case "future":
@@ -480,7 +480,7 @@ class TimelineModeManager: ObservableObject {
         case 4:
             color = .gray
         case 5:
-            color = .darkGray
+            color = UIColor.darkGray
         case 6:
             color = .black
         default:
